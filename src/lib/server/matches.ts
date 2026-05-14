@@ -1,0 +1,123 @@
+import { sqlite } from '$lib/server/db';
+import { isValidResult, type MatchResult } from '$lib/server/scoring';
+
+export type Match = {
+  id: number;
+  leagueId: number;
+  playerAId: number;
+  playerBId: number;
+  result: MatchResult | null;
+  recordedAt: number | null;
+};
+
+export type MatchWithNames = Match & {
+  playerAName: string;
+  playerBName: string;
+};
+
+/**
+ * Generate unordered pairs (i, j) with i < j for a round-robin where every
+ * player plays every other player once.
+ */
+export function generatePairs<T extends { id: number }>(
+  items: T[]
+): { aId: number; bId: number }[] {
+  const out: { aId: number; bId: number }[] = [];
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i];
+      const b = items[j];
+      const aId = Math.min(a.id, b.id);
+      const bId = Math.max(a.id, b.id);
+      out.push({ aId, bId });
+    }
+  }
+  return out;
+}
+
+export function listMatches(leagueId: number): MatchWithNames[] {
+  return sqlite
+    .prepare(
+      `select m.id,
+              m.league_id  as leagueId,
+              m.player_a_id as playerAId,
+              m.player_b_id as playerBId,
+              m.result,
+              m.recorded_at as recordedAt,
+              pa.name as playerAName,
+              pb.name as playerBName
+         from matches m
+         join players pa on pa.id = m.player_a_id
+         join players pb on pb.id = m.player_b_id
+        where m.league_id = ?
+        order by m.id asc`
+    )
+    .all(leagueId) as MatchWithNames[];
+}
+
+export function listRecentResults(leagueId: number, limit = 10): MatchWithNames[] {
+  return sqlite
+    .prepare(
+      `select m.id,
+              m.league_id  as leagueId,
+              m.player_a_id as playerAId,
+              m.player_b_id as playerBId,
+              m.result,
+              m.recorded_at as recordedAt,
+              pa.name as playerAName,
+              pb.name as playerBName
+         from matches m
+         join players pa on pa.id = m.player_a_id
+         join players pb on pb.id = m.player_b_id
+        where m.league_id = ? and m.result is not null
+        order by m.recorded_at desc, m.id desc
+        limit ?`
+    )
+    .all(leagueId, limit) as MatchWithNames[];
+}
+
+export function getMatch(leagueId: number, matchId: number): Match | undefined {
+  return sqlite
+    .prepare(
+      `select id,
+              league_id as leagueId,
+              player_a_id as playerAId,
+              player_b_id as playerBId,
+              result,
+              recorded_at as recordedAt
+         from matches
+        where id = ? and league_id = ?`
+    )
+    .get(matchId, leagueId) as Match | undefined;
+}
+
+export function recordMatchResult(
+  leagueId: number,
+  matchId: number,
+  result: MatchResult
+): void {
+  if (!isValidResult(result)) throw new Error('Invalid result.');
+  const info = sqlite
+    .prepare(
+      "update matches set result = ?, recorded_at = (unixepoch('subsec') * 1000) where id = ? and league_id = ?"
+    )
+    .run(result, matchId, leagueId);
+  if (info.changes === 0) {
+    throw new Error('Match not found.');
+  }
+}
+
+export function clearMatchResult(leagueId: number, matchId: number): void {
+  sqlite
+    .prepare('update matches set result = null, recorded_at = null where id = ? and league_id = ?')
+    .run(matchId, leagueId);
+}
+
+export function countMatches(leagueId: number): { total: number; completed: number } {
+  const row = sqlite
+    .prepare(
+      'select count(1) as total, sum(case when result is not null then 1 else 0 end) as completed from matches where league_id = ?'
+    )
+    .get(leagueId) as { total: number; completed: number | null };
+  return { total: row.total, completed: row.completed ?? 0 };
+}

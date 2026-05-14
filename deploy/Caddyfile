@@ -1,0 +1,8 @@
+{$CADDY_DOMAIN} {
+  encode gzip zstd
+  reverse_proxy league:3000 {
+    header_up Host {http.request.host}
+    header_up X-Forwarded-Host {http.request.host}
+    header_up X-Forwarded-Proto {scheme}
+  }
+}

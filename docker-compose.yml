@@ -1,0 +1,10 @@
+services:
+  league:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - SESSION_SECRET=${SESSION_SECRET}
+      - DB_PATH=/app/data/league.db
+    volumes:
+      - ./data:/app/data

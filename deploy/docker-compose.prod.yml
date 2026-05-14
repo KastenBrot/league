@@ -1,0 +1,33 @@
+services:
+  league:
+    image: ${IMAGE}
+    restart: unless-stopped
+    environment:
+      - SESSION_SECRET=${SESSION_SECRET}
+      - HOST_HEADER=x-forwarded-host
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - PORT_HEADER=x-forwarded-port
+      - DB_PATH=/app/data/league.db
+    volumes:
+      - /opt/league/data:/app/data
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CADDY_DOMAIN=${CADDY_DOMAIN:-}
+    volumes:
+      - /opt/league/deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - league
+
+volumes:
+  caddy_data:
+  caddy_config:
