@@ -32,6 +32,7 @@ sqlite.exec(`
     id integer primary key autoincrement,
     league_id integer not null references leagues(id) on delete cascade,
     name text not null,
+    faction_id text not null,
     created_at integer not null default (unixepoch('subsec') * 1000),
     unique(league_id, name)
   );

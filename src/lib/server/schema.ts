@@ -44,6 +44,7 @@ export const players = sqliteTable(
       .notNull()
       .references(() => leagues.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    factionId: text('faction_id').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
       .notNull()
       .default(sql`(unixepoch('subsec') * 1000)`)

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { buildStandings } from './standings';
 
 const players = [
-  { id: 1, name: 'Alice' },
-  { id: 2, name: 'Bob' },
-  { id: 3, name: 'Carol' },
-  { id: 4, name: 'Dave' }
+  { id: 1, name: 'Alice', factionId: 'space-marines' },
+  { id: 2, name: 'Bob', factionId: 'necrons' },
+  { id: 3, name: 'Carol', factionId: 'tyranids' },
+  { id: 4, name: 'Dave', factionId: 'orks' }
 ];
 
 describe('buildStandings', () => {

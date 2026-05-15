@@ -4,6 +4,7 @@ import { POINTS_DRAW, POINTS_LOSS, POINTS_WIN, type MatchResult } from '$lib/ser
 export type StandingsRow = {
   playerId: number;
   playerName: string;
+  factionId: string;
   played: number;
   wins: number;
   draws: number;
@@ -20,6 +21,7 @@ export type StandingsMatchInput = {
 export type StandingsPlayerInput = {
   id: number;
   name: string;
+  factionId: string;
 };
 
 /**
@@ -36,6 +38,7 @@ export function buildStandings(
     byId.set(p.id, {
       playerId: p.id,
       playerName: p.name,
+      factionId: p.factionId,
       played: 0,
       wins: 0,
       draws: 0,
@@ -80,7 +83,7 @@ export function buildStandings(
 
 export function computeStandings(leagueId: number): StandingsRow[] {
   const players = sqlite
-    .prepare('select id, name from players where league_id = ? order by name asc')
+    .prepare('select id, name, faction_id as factionId from players where league_id = ? order by name asc')
     .all(leagueId) as StandingsPlayerInput[];
 
   const matches = sqlite

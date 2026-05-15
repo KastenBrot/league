@@ -16,18 +16,27 @@ export const load: PageServerLoad = async ({ params }) => {
   const recent = listRecentResults(league.id, 10);
   const stats = countMatches(league.id);
 
-  type Opponent = { id: number; name: string };
+  type Opponent = { id: number; name: string; factionId: string };
   const openByPlayer = new Map<number, Opponent[]>();
   for (const p of players) openByPlayer.set(p.id, []);
   for (const m of matches) {
     if (m.result !== null) continue;
-    openByPlayer.get(m.playerAId)?.push({ id: m.playerBId, name: m.playerBName });
-    openByPlayer.get(m.playerBId)?.push({ id: m.playerAId, name: m.playerAName });
+    openByPlayer.get(m.playerAId)?.push({
+      id: m.playerBId,
+      name: m.playerBName,
+      factionId: m.playerBFactionId
+    });
+    openByPlayer.get(m.playerBId)?.push({
+      id: m.playerAId,
+      name: m.playerAName,
+      factionId: m.playerAFactionId
+    });
   }
   const openMatchesPerPlayer = players
     .map((p) => ({
       playerId: p.id,
       playerName: p.name,
+      factionId: p.factionId,
       opponents: (openByPlayer.get(p.id) ?? []).sort((a, b) => a.name.localeCompare(b.name))
     }))
     .sort((a, b) => a.playerName.localeCompare(b.playerName));

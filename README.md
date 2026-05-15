@@ -1,8 +1,10 @@
 # league
 
 A simple league management tool. Admins create leagues, add players, generate
-a round-robin schedule, and record match results. Each league has a public
-read-only page with standings and remaining matches.
+a round-robin schedule, and record match results. While a league is **active**,
+admins can add, edit, or remove players; removing a player deletes their
+scheduled matches and any recorded results. Each league has a public read-only
+page with standings and remaining matches.
 
 Scoring: **win = 1, draw = 0.5, loss = 0**.
 
@@ -39,3 +41,9 @@ Data persists in `./data` (SQLite database).
 - `/l/<slug>` — public standings and open matches for one league.
 - `/login`, `/setup` — admin authentication.
 - `/admin` — admin dashboard (after login).
+
+## Spearhead faction icons
+
+Each player has a **Spearhead faction**. Edit **`src/lib/constants.ts`**: each entry in `SPEARHEAD_FACTIONS` has `id`, `name`, and `iconUrl`. Faction SVGs live in `static/spearhead-factions/`. Missing images fall back to `FACTION_ICONS.defaultUrl`, then to initials.
+
+Runemark SVGs are from the [Warcry Card Creator](https://github.com/barrysheppard/warcry-card-creator) project ([CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)). This app is for **personal, non-commercial** use only.

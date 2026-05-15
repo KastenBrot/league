@@ -7,8 +7,15 @@ import {
   getLeagueBySlug,
   setLeagueStatus
 } from '$lib/server/leagues';
-import { addPlayer, listPlayers, removePlayer } from '$lib/server/players';
 import {
+  addPlayer,
+  countPlayers,
+  listPlayers,
+  removePlayer,
+  updatePlayer as savePlayer
+} from '$lib/server/players';
+import {
+  addMatchesForPlayer,
   clearMatchResult,
   countMatches,
   listMatches,
@@ -16,7 +23,11 @@ import {
   recordMatchResult
 } from '$lib/server/matches';
 import { computeStandings } from '$lib/server/standings';
-import { isValidLeagueStatus, isValidResult } from '$lib/server/scoring';
+import {
+  isValidLeagueStatus,
+  isValidResult,
+  type LeagueStatus
+} from '$lib/server/scoring';
 
 export const load: PageServerLoad = async ({ params }) => {
   const league = getLeagueBySlug(params.slug);
@@ -37,31 +48,68 @@ function requireLeague(slug: string) {
   return league;
 }
 
+function canManageRoster(status: LeagueStatus): boolean {
+  return status === 'draft' || status === 'active';
+}
+
 export const actions: Actions = {
   addPlayer: async ({ request, params }) => {
     const league = requireLeague(params.slug);
-    if (league.status !== 'draft') {
-      return fail(400, { error: 'Players can only be added while the league is in draft.' });
+    if (!canManageRoster(league.status)) {
+      return fail(400, { error: 'Players can only be added while the league is in draft or active.' });
     }
     const data = await request.formData();
     const name = String(data.get('name') ?? '');
+    const factionId = String(data.get('factionId') ?? '');
     try {
-      addPlayer(league.id, name);
+      const player = addPlayer(league.id, name, factionId);
+      if (league.status === 'active') {
+        addMatchesForPlayer(league.id, player.id);
+      }
     } catch (e: any) {
       return fail(400, { error: e?.message ?? 'Failed to add player.' });
     }
     return { success: true };
   },
 
+  updatePlayer: async ({ request, params }) => {
+    const league = requireLeague(params.slug);
+    if (!canManageRoster(league.status)) {
+      return fail(400, {
+        error: 'Players can only be edited while the league is in draft or active.'
+      });
+    }
+    const data = await request.formData();
+    const playerId = Number(data.get('playerId'));
+    const name = String(data.get('name') ?? '');
+    const factionId = String(data.get('factionId') ?? '');
+    if (!Number.isFinite(playerId)) return fail(400, { error: 'Invalid player.' });
+    try {
+      savePlayer(league.id, playerId, name, factionId);
+    } catch (e: any) {
+      return fail(400, { error: e?.message ?? 'Failed to update player.' });
+    }
+    return { success: true };
+  },
+
   removePlayer: async ({ request, params }) => {
     const league = requireLeague(params.slug);
-    if (league.status !== 'draft') {
-      return fail(400, { error: 'Players can only be removed while the league is in draft.' });
+    if (!canManageRoster(league.status)) {
+      return fail(400, {
+        error: 'Players can only be removed while the league is in draft or active.'
+      });
     }
     const data = await request.formData();
     const playerId = Number(data.get('playerId'));
     if (!Number.isFinite(playerId)) return fail(400, { error: 'Invalid player.' });
-    removePlayer(league.id, playerId);
+    if (league.status === 'active' && countPlayers(league.id) <= 2) {
+      return fail(400, { error: 'An active league must keep at least 2 players.' });
+    }
+    try {
+      removePlayer(league.id, playerId);
+    } catch (e: any) {
+      return fail(400, { error: e?.message ?? 'Failed to remove player.' });
+    }
     return { success: true };
   },
 

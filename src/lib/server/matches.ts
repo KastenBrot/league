@@ -13,6 +13,8 @@ export type Match = {
 export type MatchWithNames = Match & {
   playerAName: string;
   playerBName: string;
+  playerAFactionId: string;
+  playerBFactionId: string;
 };
 
 /**
@@ -45,7 +47,9 @@ export function listMatches(leagueId: number): MatchWithNames[] {
               m.result,
               m.recorded_at as recordedAt,
               pa.name as playerAName,
-              pb.name as playerBName
+              pb.name as playerBName,
+              pa.faction_id as playerAFactionId,
+              pb.faction_id as playerBFactionId
          from matches m
          join players pa on pa.id = m.player_a_id
          join players pb on pb.id = m.player_b_id
@@ -65,7 +69,9 @@ export function listRecentResults(leagueId: number, limit = 10): MatchWithNames[
               m.result,
               m.recorded_at as recordedAt,
               pa.name as playerAName,
-              pb.name as playerBName
+              pb.name as playerBName,
+              pa.faction_id as playerAFactionId,
+              pb.faction_id as playerBFactionId
          from matches m
          join players pa on pa.id = m.player_a_id
          join players pb on pb.id = m.player_b_id
@@ -111,6 +117,36 @@ export function clearMatchResult(leagueId: number, matchId: number): void {
   sqlite
     .prepare('update matches set result = null, recorded_at = null where id = ? and league_id = ?')
     .run(matchId, leagueId);
+}
+
+/**
+ * After adding a player to an active league, insert open matches vs every other player.
+ * Skips pairs that already exist. Returns how many rows were inserted.
+ */
+export function addMatchesForPlayer(leagueId: number, playerId: number): number {
+  const others = sqlite
+    .prepare('select id from players where league_id = ? and id != ? order by id asc')
+    .all(leagueId, playerId) as { id: number }[];
+
+  if (others.length === 0) return 0;
+
+  const pairs = generatePairs([{ id: playerId }, ...others]).filter(
+    (p) => p.aId === playerId || p.bId === playerId
+  );
+
+  const insert = sqlite.prepare(
+    'insert or ignore into matches (league_id, player_a_id, player_b_id) values (?, ?, ?)'
+  );
+
+  let inserted = 0;
+  const tx = sqlite.transaction(() => {
+    for (const p of pairs) {
+      const info = insert.run(leagueId, p.aId, p.bId);
+      inserted += info.changes;
+    }
+  });
+  tx();
+  return inserted;
 }
 
 export function countMatches(leagueId: number): { total: number; completed: number } {
