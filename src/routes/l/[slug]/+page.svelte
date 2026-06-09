@@ -1,5 +1,6 @@
 <script lang="ts">
   import FactionMark from '$lib/components/FactionMark.svelte';
+  import FireComet from '$lib/components/FireComet.svelte';
   import { RECENT_RESULTS_STEP } from '$lib/constants';
   import { publicResultLabel, statusBadgeClass } from '$lib/ui';
 
@@ -11,6 +12,7 @@
   $: recentLimit = data.recentLimit;
   $: stats = data.stats;
   $: openMatchesPerPlayer = data.openMatchesPerPlayer;
+  $: onFirePlayerIds = new Set<number>(data.onFirePlayerIds ?? []);
   $: hasMoreRecent = recent.length < stats.completed;
   $: nextRecentLimit = recentLimit + RECENT_RESULTS_STEP;
 
@@ -87,6 +89,7 @@
         </div>
         <ul class="space-y-3">
           {#each standings as row, i (row.playerId)}
+            {@const onFire = onFirePlayerIds.has(row.playerId)}
             <li class="flex items-center gap-3">
               <span class="w-5 shrink-0 text-right text-xs tabular-nums text-zinc-500">{i + 1}</span>
               <FactionMark factionId={row.factionId} sizeClass="h-8 w-8 shrink-0" />
@@ -97,9 +100,14 @@
                 </div>
                 {#if row.points > 0}
                   <div
-                    class={`h-2.5 rounded-lg ${barFillClass(i)}`}
+                    class="relative inline-block max-w-full overflow-visible pr-1"
                     style={`width: ${barWidthPercent(row.points)}`}
-                  ></div>
+                  >
+                    <div class={`h-2.5 rounded-none ${barFillClass(i)}`}></div>
+                    {#if onFire}
+                      <FireComet />
+                    {/if}
+                  </div>
                 {/if}
               </div>
             </li>

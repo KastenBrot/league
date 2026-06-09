@@ -4,6 +4,7 @@ import { RECENT_RESULTS_MAX, RECENT_RESULTS_STEP } from '$lib/constants';
 import { getLeagueBySlug } from '$lib/server/leagues';
 import { listPlayers } from '$lib/server/players';
 import { listMatches, listRecentResults, countMatches } from '$lib/server/matches';
+import { playersOnFire } from '$lib/server/streaks';
 import { computeStandings } from '$lib/server/standings';
 
 export const load: PageServerLoad = async ({ params, url }) => {
@@ -46,5 +47,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
     }))
     .sort((a, b) => a.playerName.localeCompare(b.playerName));
 
-  return { league, standings, recent, recentLimit, stats, openMatchesPerPlayer };
+  const onFirePlayerIds = playersOnFire(
+    players.map((p) => p.id),
+    matches
+  );
+
+  return { league, standings, recent, recentLimit, stats, openMatchesPerPlayer, onFirePlayerIds };
 };
