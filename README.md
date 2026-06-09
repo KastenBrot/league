@@ -62,7 +62,12 @@ TLS and routing for `3hard.de` are configured in **in-stock**’s [`deploy/Caddy
 
 ### DNS
 
-`3hard.de` A record → Hetzner server IP (`159.69.16.102`). Remove any extra A or AAAA records pointing elsewhere, or Let’s Encrypt validation will fail.
+| Record | Value |
+|--------|--------|
+| `A` | `159.69.16.102` (Hetzner IPv4) |
+| `AAAA` | `2a01:4f8:1c1e:6d28::1` (Hetzner IPv6) **or** omit AAAA entirely |
+
+Remove any other `A`/`AAAA` records (e.g. leftover IONOS parking). Wrong IPv6 breaks TLS and HTTP→HTTPS redirect on mobile, because traffic never reaches Caddy.
 
 ## URLs
 
