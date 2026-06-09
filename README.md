@@ -58,11 +58,11 @@ League deploys to the same Hetzner VPS as [in-stock](https://github.com/Engines-
 
 ### in-stock repo (shared Caddy)
 
-Set `LEAGUE_DOMAIN` in the **in-stock** repo secrets to `3hard.de`. Deploy **in-stock first** so Caddy picks up the new site block, then deploy league.
+TLS and routing for `3hard.de` are configured in **in-stock**’s [`deploy/Caddyfile`](../in-stock/deploy/Caddyfile) (domains are hardcoded — Caddy env substitution does not work with the bind-mounted config). Deploy **in-stock first**, then league.
 
 ### DNS
 
-`3hard.de` A record → Hetzner server IP.
+`3hard.de` A record → Hetzner server IP (`159.69.16.102`). Remove any extra A or AAAA records pointing elsewhere, or Let’s Encrypt validation will fail.
 
 ## URLs
 

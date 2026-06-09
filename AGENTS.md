@@ -34,7 +34,7 @@ When in doubt, read nearby files in the same feature area and mirror their appro
 
 ## Hetzner Cloud deployment notes
 
-- **Shared Caddy**: TLS terminates on lootbox’s Caddy (`/opt/lootbox/deploy/Caddyfile`). League has no Caddy service; it joins Docker network `deploy_default` so Caddy can `reverse_proxy league:3000`.
+- **Shared Caddy**: TLS terminates on lootbox’s Caddy (`/opt/lootbox/deploy/Caddyfile`). Domains are **hardcoded** in that file (`:80` for lootbox, `3hard.de` for league) — env vars in the Caddyfile do not work with the bind mount. League has no Caddy service; it joins Docker network `deploy_default` so Caddy can `reverse_proxy league:3000`. League compose uses project name `league` (`docker compose -p league`) to avoid colliding with lootbox’s `deploy` project.
 - **Firewall (Hetzner)**: allow inbound **TCP 80/443** from `0.0.0.0/0` (and `::/0` if using IPv6). Restrict **TCP 22** to your admin IP(s).
 - **Key paths on server**:
   - Compose: `/opt/league/deploy/docker-compose.prod.yml`

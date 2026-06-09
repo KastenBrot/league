@@ -8,6 +8,7 @@ set -euo pipefail
 APP_DIR="/opt/league"
 ENV_FILE="${APP_DIR}/.env"
 COMPOSE_FILE="${APP_DIR}/deploy/docker-compose.prod.yml"
+COMPOSE_PROJECT="league"
 
 mkdir -p "${APP_DIR}/data" "${APP_DIR}/deploy"
 cd "${APP_DIR}"
@@ -59,11 +60,11 @@ upsert_env IMAGE "${IMAGE}"
 echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
 
 # --- Pull & roll ------------------------------------------------------------
-docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" pull
-docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d --remove-orphans
+docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" pull
+docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" up -d
 
 # --- Cleanup ----------------------------------------------------------------
 docker image prune -f
 docker logout ghcr.io >/dev/null 2>&1 || true
 
-docker compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" ps
+docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" ps
