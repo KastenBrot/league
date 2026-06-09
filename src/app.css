@@ -1,5 +1,17 @@
 @import "tailwindcss/index.css";
 
+@theme {
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+}
+
+a[href],
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
 html,
 body {
   height: 100%;

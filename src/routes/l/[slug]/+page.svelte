@@ -1,30 +1,47 @@
 <script lang="ts">
   import FactionMark from '$lib/components/FactionMark.svelte';
+  import { RECENT_RESULTS_STEP } from '$lib/constants';
+  import { publicResultLabel, statusBadgeClass } from '$lib/ui';
 
   export let data: any;
 
   $: league = data.league;
   $: standings = data.standings;
   $: recent = data.recent;
+  $: recentLimit = data.recentLimit;
   $: stats = data.stats;
   $: openMatchesPerPlayer = data.openMatchesPerPlayer;
-
-  function statusBadge(s: string) {
-    if (s === 'active') return 'border-emerald-500/35 bg-emerald-950/50 text-emerald-200';
-    return 'border-zinc-600/50 bg-zinc-800/60 text-zinc-300';
-  }
+  $: hasMoreRecent = recent.length < stats.completed;
+  $: nextRecentLimit = recentLimit + RECENT_RESULTS_STEP;
 
   function fmtPoints(n: number): string {
     return Number.isInteger(n) ? String(n) : n.toFixed(1);
   }
 
-  function resultLabel(m: any): string {
-    if (m.result === 'draw') return 'Draw';
-    if (m.result === 'a') return `${m.playerAName} won`;
-    return `${m.playerBName} won`;
+  $: maxPoints = standings.length
+    ? Math.max(...standings.map((row: { points: number }) => row.points))
+    : 0;
+
+  function barWidthPercent(points: number): string {
+    if (maxPoints <= 0 || points <= 0) return '0%';
+    return `${(points / maxPoints) * 100}%`;
   }
 
-  $: podium = standings.slice(0, 3);
+  function barFillClass(index: number): string {
+    if (index === 0) {
+      return 'bg-gradient-to-r from-amber-400/55 via-amber-500/40 to-amber-700/50 shadow-sm shadow-amber-500/20';
+    }
+    if (index === 1) {
+      return 'bg-gradient-to-r from-slate-200/45 via-zinc-300/30 to-slate-500/35 shadow-sm shadow-slate-400/15';
+    }
+    if (index === 2) {
+      return 'bg-gradient-to-r from-orange-500/45 via-amber-700/35 to-orange-900/40 shadow-sm shadow-orange-800/15';
+    }
+    return 'bg-gradient-to-r from-teal-600/35 to-teal-800/45';
+  }
+
+  const headerBtnClass =
+    'inline-flex items-center gap-2 rounded-xl border border-zinc-700/80 bg-zinc-950/50 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900/60';
 </script>
 
 <main class="relative z-10 min-h-dvh text-zinc-50">
@@ -35,135 +52,116 @@
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-teal-400/90">League</p>
           <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">{league.name}</h1>
           <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-zinc-500">
-            <span class={`rounded-full border px-2.5 py-1 font-medium uppercase tracking-wide ${statusBadge(league.status)}`}>
+            <span class={`rounded-full border px-2.5 py-1 font-medium uppercase tracking-wide ${statusBadgeClass(league.status)}`}>
               {league.status}
             </span>
             <span class="hidden sm:inline text-zinc-700">|</span>
             <span class="tabular-nums">{stats.completed}/{stats.total} matches played</span>
           </div>
         </div>
-        <a
-          class="inline-flex items-center gap-2 self-start rounded-xl border border-zinc-700/80 bg-zinc-950/50 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900/60"
-          href="/"
-        >
-          <span aria-hidden="true" class="text-zinc-500">←</span>
-          All leagues
-        </a>
+        <div class="flex flex-wrap items-center gap-2 self-start">
+          {#if data.user}
+            <a class={headerBtnClass} href="/admin/leagues/{league.slug}">
+              Edit league
+              <span aria-hidden="true" class="text-zinc-500">→</span>
+            </a>
+          {:else}
+            <a class={headerBtnClass} href="/login">
+              Login
+              <span aria-hidden="true" class="text-zinc-500">→</span>
+            </a>
+          {/if}
+          <a class={headerBtnClass} href="/">
+            <span aria-hidden="true" class="text-zinc-500">←</span>
+            All leagues
+          </a>
+        </div>
       </div>
     </header>
 
     {#if standings.length > 0}
       <section class="rounded-2xl border border-zinc-800/80 bg-zinc-900/35 p-5 shadow-lg shadow-black/20 ring-1 ring-inset ring-white/5 backdrop-blur-md sm:p-6">
-        <div class="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 class="text-sm font-semibold text-zinc-100">Top of the table</h2>
-            <p class="text-xs text-zinc-500">By points — full grid below.</p>
-          </div>
+        <div class="mb-5">
+          <h2 class="text-sm font-semibold text-zinc-100">Points</h2>
+          <p class="mt-1 text-xs text-zinc-500">Bar length reflects points — expand standings below for W/D/L.</p>
         </div>
-        <div
-          class={`flex items-end ${standings.length >= 3 ? 'justify-center gap-3 sm:gap-4' : standings.length === 2 ? 'justify-center gap-6 sm:gap-10' : 'justify-center'}`}
-        >
-          {#if podium[1]}
-            <div class="flex w-full max-w-[7.5rem] flex-col items-center text-center">
-              <div class="mb-3">
-                <FactionMark factionId={podium[1].factionId} sizeClass="h-12 w-12" />
+        <ul class="space-y-3">
+          {#each standings as row, i (row.playerId)}
+            <li class="flex items-center gap-3">
+              <span class="w-5 shrink-0 text-right text-xs tabular-nums text-zinc-500">{i + 1}</span>
+              <FactionMark factionId={row.factionId} sizeClass="h-8 w-8 shrink-0" />
+              <div class="min-w-0 flex-1">
+                <div class="mb-1 flex items-baseline justify-between gap-2">
+                  <span class="truncate text-sm font-medium text-zinc-100">{row.playerName}</span>
+                  <span class="shrink-0 text-sm font-semibold tabular-nums text-zinc-50">{fmtPoints(row.points)}</span>
+                </div>
+                {#if row.points > 0}
+                  <div
+                    class={`h-2.5 rounded-lg ${barFillClass(i)}`}
+                    style={`width: ${barWidthPercent(row.points)}`}
+                  ></div>
+                {/if}
               </div>
-              <div
-                class="flex w-full flex-col justify-end rounded-t-xl border border-b-0 border-zinc-700/80 bg-gradient-to-b from-zinc-800/50 to-zinc-950/60 px-2 pb-3 pt-4 ring-1 ring-inset ring-white/5"
-                style="min-height: 5.5rem"
-              >
-                <p class="truncate text-xs font-medium text-zinc-200">{podium[1].playerName}</p>
-                <p class="mt-1 text-lg font-semibold tabular-nums text-zinc-100">{fmtPoints(podium[1].points)}</p>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">2nd</p>
-              </div>
-            </div>
-          {:else if standings.length >= 3}
-            <div class="hidden w-full max-w-[7.5rem] sm:block" aria-hidden="true"></div>
-          {/if}
-
-          {#if podium[0]}
-            <div class="flex w-full max-w-[9rem] flex-col items-center text-center">
-              <div class="mb-3">
-                <FactionMark factionId={podium[0].factionId} sizeClass="h-14 w-14" />
-              </div>
-              <div
-                class="flex w-full flex-col justify-end rounded-t-xl border border-b-0 border-amber-900/40 bg-gradient-to-b from-amber-950/35 to-zinc-950/80 px-3 pb-4 pt-6 ring-1 ring-inset ring-amber-500/15"
-                style="min-height: {standings.length === 1 ? '6rem' : '7.5rem'}"
-              >
-                <p class="truncate text-sm font-semibold text-zinc-50">{podium[0].playerName}</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums text-white">{fmtPoints(podium[0].points)}</p>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-amber-200/80">1st</p>
-              </div>
-            </div>
-          {/if}
-
-          {#if podium[2]}
-            <div class="flex w-full max-w-[7.5rem] flex-col items-center text-center">
-              <div class="mb-3">
-                <FactionMark factionId={podium[2].factionId} sizeClass="h-12 w-12" />
-              </div>
-              <div
-                class="flex w-full flex-col justify-end rounded-t-xl border border-b-0 border-zinc-700/80 bg-gradient-to-b from-zinc-800/40 to-zinc-950/60 px-2 pb-3 pt-3 ring-1 ring-inset ring-white/5"
-                style="min-height: 4.5rem"
-              >
-                <p class="truncate text-xs font-medium text-zinc-200">{podium[2].playerName}</p>
-                <p class="mt-1 text-lg font-semibold tabular-nums text-zinc-100">{fmtPoints(podium[2].points)}</p>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">3rd</p>
-              </div>
-            </div>
-          {:else if standings.length >= 3}
-            <div class="hidden w-full max-w-[7.5rem] sm:block" aria-hidden="true"></div>
-          {/if}
-        </div>
+            </li>
+          {/each}
+        </ul>
       </section>
     {/if}
 
     <section class="overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/35 shadow-lg shadow-black/20 ring-1 ring-inset ring-white/5 backdrop-blur-md">
-      <div class="border-b border-zinc-800/80 bg-zinc-950/30 px-5 py-4 sm:px-6">
-        <h2 class="text-sm font-semibold text-zinc-100">Standings</h2>
-        <p class="mt-1 text-xs text-zinc-500">Win = 1, draw = 0.5, loss = 0.</p>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-            <tr class="border-b border-zinc-800/80">
-              <th class="px-5 py-3 sm:px-6">#</th>
-              <th class="px-5 py-3 sm:px-6">Player</th>
-              <th class="px-5 py-3 text-right sm:px-6">P</th>
-              <th class="px-5 py-3 text-right sm:px-6">W</th>
-              <th class="px-5 py-3 text-right sm:px-6">D</th>
-              <th class="px-5 py-3 text-right sm:px-6">L</th>
-              <th class="px-5 py-3 text-right sm:px-6">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#each standings as row, i (row.playerId)}
-              <tr
-                class={`border-b border-zinc-800/50 transition hover:bg-zinc-800/25 ${i === 0 ? 'bg-teal-950/15' : i % 2 === 1 ? 'bg-zinc-950/20' : ''}`}
-              >
-                <td class="px-5 py-3 tabular-nums text-zinc-500 sm:px-6">{i + 1}</td>
-                <td class="px-5 py-3 sm:px-6">
-                  <div class="flex items-center gap-2">
-                    <FactionMark factionId={row.factionId} sizeClass="h-8 w-8" />
-                    <span class="font-medium text-zinc-100">{row.playerName}</span>
-                  </div>
-                </td>
-                <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.played}</td>
-                <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.wins}</td>
-                <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.draws}</td>
-                <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.losses}</td>
-                <td class="px-5 py-3 text-right font-mono text-sm font-semibold text-zinc-50 sm:px-6">
-                  {fmtPoints(row.points)}
-                </td>
+      <details class="group">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-zinc-800/80 bg-zinc-950/30 px-5 py-4 transition hover:bg-zinc-800/25 sm:px-6 [&::-webkit-details-marker]:hidden">
+          <div>
+            <h2 class="text-sm font-semibold text-zinc-100">Standings</h2>
+            <p class="mt-1 text-xs text-zinc-500">Win = 1, draw = 0.5, loss = 0.</p>
+          </div>
+          <span
+            aria-hidden="true"
+            class="shrink-0 text-zinc-500 transition group-open:rotate-180"
+          >▼</span>
+        </summary>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              <tr class="border-b border-zinc-800/80">
+                <th class="px-5 py-3 sm:px-6">#</th>
+                <th class="px-5 py-3 sm:px-6">Player</th>
+                <th class="px-5 py-3 text-right sm:px-6">P</th>
+                <th class="px-5 py-3 text-right sm:px-6">W</th>
+                <th class="px-5 py-3 text-right sm:px-6">D</th>
+                <th class="px-5 py-3 text-right sm:px-6">L</th>
+                <th class="px-5 py-3 text-right sm:px-6">Pts</th>
               </tr>
-            {:else}
-              <tr>
-                <td class="px-5 py-8 text-sm text-zinc-400 sm:px-6" colspan="7">No players yet.</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {#each standings as row, i (row.playerId)}
+                <tr
+                  class={`border-b border-zinc-800/50 transition hover:bg-zinc-800/25 ${i === 0 ? 'bg-teal-950/15' : i % 2 === 1 ? 'bg-zinc-950/20' : ''}`}
+                >
+                  <td class="px-5 py-3 tabular-nums text-zinc-500 sm:px-6">{i + 1}</td>
+                  <td class="px-5 py-3 sm:px-6">
+                    <div class="flex items-center gap-2">
+                      <FactionMark factionId={row.factionId} sizeClass="h-8 w-8" />
+                      <span class="font-medium text-zinc-100">{row.playerName}</span>
+                    </div>
+                  </td>
+                  <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.played}</td>
+                  <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.wins}</td>
+                  <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.draws}</td>
+                  <td class="px-5 py-3 text-right font-mono text-zinc-400 sm:px-6">{row.losses}</td>
+                  <td class="px-5 py-3 text-right font-mono text-sm font-semibold text-zinc-50 sm:px-6">
+                    {fmtPoints(row.points)}
+                  </td>
+                </tr>
+              {:else}
+                <tr>
+                  <td class="px-5 py-8 text-sm text-zinc-400 sm:px-6" colspan="7">No players yet.</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </section>
 
     <section class="rounded-2xl border border-zinc-800/80 bg-zinc-900/35 shadow-lg shadow-black/20 ring-1 ring-inset ring-white/5 backdrop-blur-md">
@@ -224,7 +222,7 @@
                 {m.playerBName}
               </span>
               <span class="ml-0 text-zinc-500 sm:ml-2">—</span>
-              <span class="text-zinc-400">{resultLabel(m)}</span>
+              <span class="text-zinc-400">{publicResultLabel(m)}</span>
             </div>
             {#if m.recordedAt}
               <time class="text-xs tabular-nums text-zinc-500">{new Date(m.recordedAt).toLocaleString()}</time>
@@ -234,6 +232,16 @@
           <li class="px-5 py-8 text-sm text-zinc-400 sm:px-6">No results yet.</li>
         {/each}
       </ul>
+      {#if hasMoreRecent}
+        <div class="border-t border-zinc-800/60 px-5 py-4 text-center sm:px-6">
+          <a
+            class="inline-flex items-center justify-center rounded-xl border border-zinc-700/80 bg-zinc-950/50 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-900/60"
+            href="?recent={nextRecentLimit}"
+          >
+            Load more
+          </a>
+        </div>
+      {/if}
     </section>
   </div>
 </main>

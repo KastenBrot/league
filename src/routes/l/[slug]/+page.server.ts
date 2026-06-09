@@ -1,11 +1,12 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
+import { RECENT_RESULTS_MAX, RECENT_RESULTS_STEP } from '$lib/constants';
 import { getLeagueBySlug } from '$lib/server/leagues';
 import { listPlayers } from '$lib/server/players';
 import { listMatches, listRecentResults, countMatches } from '$lib/server/matches';
 import { computeStandings } from '$lib/server/standings';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
   const league = getLeagueBySlug(params.slug);
   if (!league) throw error(404, 'League not found');
   if (league.status === 'draft') throw error(404, 'League not yet started');
@@ -13,7 +14,11 @@ export const load: PageServerLoad = async ({ params }) => {
   const players = listPlayers(league.id);
   const matches = listMatches(league.id);
   const standings = computeStandings(league.id);
-  const recent = listRecentResults(league.id, 10);
+  const recentLimit = Math.min(
+    Math.max(Number(url.searchParams.get('recent') || RECENT_RESULTS_STEP), RECENT_RESULTS_STEP),
+    RECENT_RESULTS_MAX
+  );
+  const recent = listRecentResults(league.id, recentLimit);
   const stats = countMatches(league.id);
 
   type Opponent = { id: number; name: string; factionId: string };
@@ -41,5 +46,5 @@ export const load: PageServerLoad = async ({ params }) => {
     }))
     .sort((a, b) => a.playerName.localeCompare(b.playerName));
 
-  return { league, standings, recent, stats, openMatchesPerPlayer };
+  return { league, standings, recent, recentLimit, stats, openMatchesPerPlayer };
 };

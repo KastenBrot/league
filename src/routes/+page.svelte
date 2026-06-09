@@ -28,7 +28,7 @@
         class="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-zinc-700/80 bg-zinc-900/50 px-4 py-2.5 text-sm font-medium text-zinc-100 shadow-sm backdrop-blur transition hover:border-zinc-500 hover:bg-zinc-800/70"
         href={data.user ? '/admin' : '/login'}
       >
-        {data.user ? 'Admin' : 'Admin login'}
+        {data.user ? 'Admin' : 'Login'}
         <span aria-hidden="true" class="text-zinc-500">→</span>
       </a>
     </header>

@@ -3,6 +3,11 @@
  * Edit values here only — logic lives in feature modules (e.g. `$lib/factions.ts`).
  */
 
+// --- UI limits ---
+
+export const RECENT_RESULTS_STEP = 5;
+export const RECENT_RESULTS_MAX = 100;
+
 // --- Faction icons (`static/spearhead-factions/`) ---
 
 export const FACTION_ICONS = {
@@ -14,7 +19,7 @@ export const FACTION_ICONS = {
 export const SPEARHEAD_FACTIONS = [
   {
     id: 'stormcast-eternals',
-    name: 'Stormcast Iternals',
+    name: 'Stormcast Eternals',
     iconUrl: '/spearhead-factions/stormcast-eternals.svg'
   },
   {
@@ -95,7 +100,7 @@ export const SPEARHEAD_FACTIONS = [
     iconUrl: '/spearhead-factions/mordian-marauders.svg'
   },
   {
-    id: 'sons-of-behemoth',
+    id: 'sons-of-behemat',
     name: 'Sons of Behemat',
     iconUrl: '/spearhead-factions/sons-of-behemoth.svg'
   },
