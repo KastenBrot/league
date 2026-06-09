@@ -10,5 +10,5 @@
   <div class="flex-1">
     <slot />
   </div>
-  <SiteFooter showLogin={!data.user} />
+  <SiteFooter loggedIn={!!data.user} />
 </div>

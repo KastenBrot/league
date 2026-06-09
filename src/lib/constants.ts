@@ -5,7 +5,7 @@
 
 // --- App links ---
 
-export const GITHUB_REPO_URL = 'https://github.com/KastenBrot/league';
+export const GITHUB_REPO_URL = 'https://github.com/KastenBrot/leaguealizer';
 
 // --- UI limits ---
 

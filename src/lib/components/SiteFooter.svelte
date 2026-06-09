@@ -1,15 +1,17 @@
 <script lang="ts">
+  import '@fontsource-variable/mona-sans/wght.css';
   import { GITHUB_REPO_URL } from '$lib/constants';
 
-  export let showLogin = true;
+  export let loggedIn = false;
 </script>
 
 <footer class="relative z-10 border-t border-zinc-800/80 bg-zinc-950/40 backdrop-blur-sm">
   <div
     class="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-5 py-6 text-sm text-zinc-500 sm:px-8"
   >
+    <span>Created by me</span>
     <a
-      class="inline-flex items-center gap-2 text-zinc-400 transition hover:text-zinc-200"
+      class="github-link inline-flex items-center gap-2 text-zinc-400 transition hover:text-zinc-200"
       href={GITHUB_REPO_URL}
       rel="noopener noreferrer"
       target="_blank"
@@ -21,7 +23,14 @@
       </svg>
       GitHub
     </a>
-    {#if showLogin}
+    {#if loggedIn}
+      <a
+        class="text-teal-400/90 underline-offset-4 transition hover:text-teal-300 hover:underline"
+        href="/admin"
+      >
+        Admin
+      </a>
+    {:else}
       <a
         class="text-teal-400/90 underline-offset-4 transition hover:text-teal-300 hover:underline"
         href="/login"
@@ -31,3 +40,11 @@
     {/if}
   </div>
 </footer>
+
+<style>
+  .github-link {
+    font-family: 'Mona Sans Variable', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+</style>

@@ -24,6 +24,7 @@
     }
   },
   "dependencies": {
+    "@fontsource-variable/mona-sans": "^5.2.8",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0"
   },
