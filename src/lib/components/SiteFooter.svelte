@@ -9,7 +9,10 @@
   <div
     class="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-5 py-6 text-sm text-zinc-500 sm:px-8"
   >
-    <span>Created by me</span>
+    <span class="inline-flex items-center gap-1">
+      Made with
+      <span class="spin-heart inline-block" aria-hidden="true">❤️‍🔥</span>
+    </span>
     <a
       class="github-link inline-flex items-center gap-2 text-zinc-400 transition hover:text-zinc-200"
       href={GITHUB_REPO_URL}
@@ -46,5 +49,18 @@
     font-family: 'Mona Sans Variable', sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
+  }
+
+  .spin-heart {
+    animation: spin-heart 2.5s linear infinite;
+  }
+
+  @keyframes spin-heart {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
